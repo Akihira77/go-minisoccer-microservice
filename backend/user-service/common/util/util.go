@@ -71,3 +71,34 @@ func SetEnvFromConsulKV(v *viper.Viper) error {
 
 	return nil
 }
+
+func BindFromConsulKV(dest any, endpoint, path string) error {
+	v := viper.New()
+
+	v.SetConfigType("json")
+	err := v.AddRemoteProvider("consul", endpoint, path)
+	if err != nil {
+		logrus.Errorf("failed to add remote provider: %v", err)
+		return err
+	}
+
+	err = v.ReadRemoteConfig()
+	if err != nil {
+		logrus.Errorf("failed to read remote provider: %v", err)
+		return err
+	}
+
+	err = v.Unmarshal(&dest)
+	if err != nil {
+		logrus.Errorf("failed to unmarshal: %v", err)
+		return err
+	}
+
+	err = SetEnvFromConsulKV(v)
+	if err != nil {
+		logrus.Errorf("failed to set env from consul kv: %v", err)
+		return err
+	}
+
+	return nil
+}
