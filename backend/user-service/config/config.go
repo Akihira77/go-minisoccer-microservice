@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var config AppConfig
+var Config AppConfig
 
 type AppConfig struct {
 	Port                  int      `json:"port"`
