@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 	"user-service/config"
+	"user-service/constants"
+	errConstant "user-service/constants/error"
 	"user-service/domain/dto"
 	"user-service/repositories"
 
@@ -21,6 +23,8 @@ type IUserService interface {
 	Update(context.Context, *dto.UpdateRequest) (*dto.UserResponse, error)
 	GetUserLogin(context.Context) (*dto.UserResponse, error)
 	GetUserByUUID(context.Context, string) (*dto.UserResponse, error)
+	IsUsernameExist(context.Context, string) bool
+	IsEmailExist(context.Context, string) bool
 }
 
 type Claims struct {
@@ -35,7 +39,21 @@ func NewUserService(repository repositories.IRepositoryRegistry) IUserService {
 }
 
 func (us *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.UserResponse, error) {
-	panic("unimplemented")
+	user, err := us.repository.GetUser().FindByUUID(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	data := dto.UserResponse{
+		UUID:        user.UUID,
+		Name:        user.Name,
+		Username:    user.Username,
+		Email:       user.Email,
+		PhoneNumber: user.PhoneNumber,
+		Role:        user.Role.Code,
+	}
+
+	return &data, nil
 }
 
 func (u *UserService) GetUserLogin(context.Context) (*dto.UserResponse, error) {
@@ -84,10 +102,68 @@ func (us *UserService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.L
 	return response, nil
 }
 
-func (u *UserService) Register(context.Context, *dto.RegisterRequest) (*dto.RegisterResponse, error) {
-	panic("unimplemented")
+func (us *UserService) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
+	if us.IsUsernameExist(ctx, req.Username) {
+		return nil, errConstant.ErrUsernameExist
+	}
+
+	if us.IsEmailExist(ctx, req.Email) {
+		return nil, errConstant.ErrEmailExist
+	}
+
+	if req.Password != req.ConfirmPassword {
+		return nil, errConstant.ErrPasswordDoesNotMatch
+	}
+
+	hashedPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := us.repository.GetUser().Register(ctx, &dto.RegisterRequest{
+		Name:        req.Name,
+		Username:    req.Username,
+		Email:       req.Email,
+		Password:    string(hashedPass),
+		PhoneNumber: req.PhoneNumber,
+		RoleID:      constants.Customer,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.RegisterResponse{
+		User: dto.UserResponse{
+			UUID:        user.UUID,
+			Name:        user.Name,
+			Username:    user.Username,
+			Email:       user.Email,
+			PhoneNumber: user.PhoneNumber,
+			Role:        user.Role.Code,
+		},
+	}
+
+	return response, nil
 }
 
 func (u *UserService) Update(context.Context, *dto.UpdateRequest) (*dto.UserResponse, error) {
 	panic("unimplemented")
+}
+
+func (us *UserService) IsUsernameExist(ctx context.Context, username string) bool {
+	user, _ := us.repository.GetUser().FindByUsername(ctx, username)
+	if user != nil {
+		return true
+	}
+
+	return false
+}
+
+func (us *UserService) IsEmailExist(ctx context.Context, email string) bool {
+	user, _ := us.repository.GetUser().FindByEmail(ctx, email)
+	if user != nil {
+		return true
+	}
+
+	return false
 }
