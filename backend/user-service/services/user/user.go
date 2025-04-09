@@ -57,8 +57,22 @@ func (us *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.Use
 	return &data, nil
 }
 
-func (u *UserService) GetUserLogin(context.Context) (*dto.UserResponse, error) {
-	panic("unimplemented")
+func (us *UserService) GetUserLogin(ctx context.Context) (*dto.UserResponse, error) {
+	var (
+		userLogin = ctx.Value(constants.UserLogin).(*dto.UserResponse)
+		data      dto.UserResponse
+	)
+
+	data = dto.UserResponse{
+		UUID:        userLogin.UUID,
+		Name:        userLogin.Name,
+		Email:       userLogin.Email,
+		Username:    userLogin.Username,
+		PhoneNumber: userLogin.PhoneNumber,
+		Role:        userLogin.Role,
+	}
+
+	return &data, nil
 }
 
 func (us *UserService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
@@ -189,7 +203,6 @@ func (us *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid 
 		Email:       req.Email,
 		Password:    &password,
 		PhoneNumber: req.PhoneNumber,
-		RoleID:      req.RoleID,
 	}, uuid)
 	if err != nil {
 		return nil, err
