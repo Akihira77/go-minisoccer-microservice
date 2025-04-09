@@ -7,6 +7,7 @@ import (
 	"user-service/constants"
 	errConstant "user-service/constants/error"
 	"user-service/domain/dto"
+	"user-service/domain/models"
 	"user-service/repositories"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,7 +21,7 @@ type UserService struct {
 type IUserService interface {
 	Login(context.Context, *dto.LoginRequest) (*dto.LoginResponse, error)
 	Register(context.Context, *dto.RegisterRequest) (*dto.RegisterResponse, error)
-	Update(context.Context, *dto.UpdateRequest) (*dto.UserResponse, error)
+	Update(context.Context, *dto.UpdateRequest, string) (*dto.UserResponse, error)
 	GetUserLogin(context.Context) (*dto.UserResponse, error)
 	GetUserByUUID(context.Context, string) (*dto.UserResponse, error)
 	IsUsernameExist(context.Context, string) bool
@@ -146,8 +147,64 @@ func (us *UserService) Register(ctx context.Context, req *dto.RegisterRequest) (
 	return response, nil
 }
 
-func (u *UserService) Update(context.Context, *dto.UpdateRequest) (*dto.UserResponse, error) {
-	panic("unimplemented")
+func (us *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid string) (*dto.UserResponse, error) {
+	var (
+		password   string
+		hashedPass []byte
+		user       *models.User
+		err        error
+		data       dto.UserResponse
+	)
+
+	user, err = us.repository.GetUser().FindByUUID(ctx, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	isExist := us.IsUsernameExist(ctx, req.Username)
+	if isExist && user.Username != req.Username {
+		return nil, errConstant.ErrUsernameExist
+	}
+
+	isExist = us.IsEmailExist(ctx, req.Email)
+	if isExist && user.Email != req.Email {
+		return nil, errConstant.ErrEmailExist
+	}
+
+	if req.Password != nil {
+		if req.Password != req.ConfirmPassword {
+			return nil, errConstant.ErrPasswordDoesNotMatch
+		}
+
+		hashedPass, err = bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	password = string(hashedPass)
+	user, err = us.repository.GetUser().Update(ctx, &dto.UpdateRequest{
+		Name:        req.Name,
+		Username:    req.Username,
+		Email:       req.Email,
+		Password:    &password,
+		PhoneNumber: req.PhoneNumber,
+		RoleID:      req.RoleID,
+	}, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	data = dto.UserResponse{
+		UUID:        user.UUID,
+		Name:        user.Name,
+		Email:       user.Email,
+		Username:    user.Username,
+		PhoneNumber: user.PhoneNumber,
+		Role:        user.Role.Code,
+	}
+
+	return &data, nil
 }
 
 func (us *UserService) IsUsernameExist(ctx context.Context, username string) bool {

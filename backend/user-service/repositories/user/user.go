@@ -121,7 +121,7 @@ func (ur *UserRepository) Update(ctx context.Context, req *dto.UpdateRequest, uu
 		Name:        req.Name,
 		Username:    req.Username,
 		Email:       req.Email,
-		Password:    req.Password,
+		Password:    *req.Password,
 		PhoneNumber: req.PhoneNumber,
 		RoleID:      req.RoleID,
 	}
