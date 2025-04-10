@@ -36,7 +36,7 @@ func RunUserSeeder(db *gorm.DB) {
 			panic(err)
 		}
 
-		logrus.Info("user %s successfully seeded", user.ID)
+		logrus.Infof("user %d successfully seeded", user.ID)
 	}
 	logrus.Info("Seeder user finish")
 }

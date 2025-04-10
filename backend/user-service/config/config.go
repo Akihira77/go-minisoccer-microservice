@@ -34,12 +34,11 @@ type Database struct {
 }
 
 func Init() {
-	var config AppConfig
-	err := util.BindFromJSON(config, "config.json", ".")
+	err := util.BindFromJSON(&Config, "config", ".")
 	if err != nil {
 		logrus.Infof("failed to bind config: %v", err)
 
-		err = util.BindFromConsulKV(config, os.Getenv("CONSUL_HTTP_URL"), os.Getenv("CONSUL_HTTP_KEY"))
+		err = util.BindFromConsulKV(Config, os.Getenv("CONSUL_HTTP_URL"), os.Getenv("CONSUL_HTTP_KEY"))
 		if err != nil {
 			panic(err)
 		}

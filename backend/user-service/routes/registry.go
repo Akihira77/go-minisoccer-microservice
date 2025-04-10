@@ -24,7 +24,7 @@ func NewRouteRegistry(controller controllers.IControllerRegistry, group *gin.Rou
 }
 
 func (r *Registry) userRoute() user.IUserRoute {
-	return user.NewUserRoute(r.controller)
+	return user.NewUserRoute(r.controller, r.group)
 }
 
 func (r *Registry) Serve() {

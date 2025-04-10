@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 )
 
 func BindFromJSON(dest any, filename, path string) error {

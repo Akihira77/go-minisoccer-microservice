@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 	"user-service/common/response"
 	"user-service/config"
@@ -34,7 +35,7 @@ var command = cobra.Command{
 			panic(err)
 		}
 
-		loc, err := time.LoadLocation("Asia/Jakarta")
+		loc, err := time.LoadLocation(os.Getenv("TIMEZONE"))
 		if err != nil {
 			panic(err)
 		}
@@ -49,7 +50,9 @@ var command = cobra.Command{
 			panic(err)
 		}
 
-		seeders.NewSeederRegistry(db)
+		seeder := seeders.NewSeederRegistry(db)
+		seeder.Run()
+
 		repository := repositories.NewRepositoryRegistry(db)
 		service := services.NewServiceRegistry(repository)
 		controller := controllers.NewRegistryController(service)

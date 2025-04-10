@@ -27,7 +27,7 @@ func RunRoleSeeder(db *gorm.DB) {
 			panic(err)
 		}
 
-		logrus.Info("role %s successfully seeded", role.Code)
+		logrus.Infof("role %s successfully seeded", role.Code)
 	}
 	logrus.Info("Seeder role finish")
 }

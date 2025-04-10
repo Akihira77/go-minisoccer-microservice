@@ -16,9 +16,10 @@ type IUserRoute interface {
 	Run()
 }
 
-func NewUserRoute(controller controllers.IControllerRegistry) IUserRoute {
+func NewUserRoute(controller controllers.IControllerRegistry, group *gin.RouterGroup) IUserRoute {
 	return &UserRoute{
 		controller: controller,
+		group:      group,
 	}
 }
 
