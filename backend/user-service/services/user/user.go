@@ -5,7 +5,7 @@ import (
 	"time"
 	"user-service/config"
 	"user-service/constants"
-	errConstant "user-service/constants/error"
+	errConstant "user-service/constants/custom-error"
 	"user-service/domain/dto"
 	"user-service/domain/models"
 	"user-service/repositories"

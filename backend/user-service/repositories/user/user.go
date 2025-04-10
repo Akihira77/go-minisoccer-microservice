@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 	"errors"
-	customErr "user-service/common/error"
-	errConstant "user-service/constants/error"
+	customErr "user-service/common/custom-error"
+	errConstant "user-service/constants/custom-error"
 	"user-service/domain/dto"
 	"user-service/domain/models"
 

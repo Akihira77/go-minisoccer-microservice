@@ -3,7 +3,7 @@ package response
 import (
 	"net/http"
 	"user-service/constants"
-	errConstant "user-service/constants/error"
+	errConstant "user-service/constants/custom-error"
 
 	"github.com/gin-gonic/gin"
 )

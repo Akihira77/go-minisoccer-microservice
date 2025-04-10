@@ -1,4 +1,4 @@
-package error
+package customerror
 
 func ErrMapping(err error) bool {
 	allErrors := make([]error, 0)
