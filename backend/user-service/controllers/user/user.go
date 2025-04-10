@@ -30,11 +30,41 @@ func NewUserController(service services.IServiceRegistry) IUserController {
 }
 
 func (uc *UserController) GetUserByUUID(c *gin.Context) {
-	panic("unimplemented")
+	user, err := uc.service.GetUser().GetUserByUUID(c, c.Param("uuid"))
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  c,
+		})
+
+		return
+	}
+
+	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
+		Data: user,
+		Gin:  c,
+	})
 }
 
-func (uc *UserController) GetUserLogin(*gin.Context) {
-	panic("unimplemented")
+func (uc *UserController) GetUserLogin(c *gin.Context) {
+	user, err := uc.service.GetUser().GetUserLogin(c.Request.Context())
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  c,
+		})
+
+		return
+	}
+
+	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
+		Data: user,
+		Gin:  c,
+	})
 }
 
 func (uc *UserController) Login(c *gin.Context) {
@@ -132,6 +162,50 @@ func (uc *UserController) Register(c *gin.Context) {
 	})
 }
 
-func (uc *UserController) Update(*gin.Context) {
-	panic("unimplemented")
+func (uc *UserController) Update(c *gin.Context) {
+	req := &dto.UpdateRequest{}
+	uuid := c.Param("uuid")
+	err := c.ShouldBindJSON(req)
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  c,
+		})
+
+		return
+	}
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	err = validate.Struct(req)
+	if err != nil {
+		errMsg := http.StatusText(http.StatusUnprocessableEntity)
+		errResp := customerror.ErrValidationResponse(err)
+		response.HttpResponse(response.ParamHTTPResp{
+			Code:    http.StatusUnprocessableEntity,
+			Err:     err,
+			Message: &errMsg,
+			Data:    errResp,
+			Gin:     c,
+		})
+
+		return
+	}
+
+	user, err := uc.service.GetUser().Update(c, req, uuid)
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  c,
+		})
+
+		return
+	}
+
+	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
+		Data: user,
+		Gin:  c,
+	})
 }
