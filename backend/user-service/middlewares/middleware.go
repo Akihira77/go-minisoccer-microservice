@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -10,10 +11,12 @@ import (
 	"user-service/config"
 	"user-service/constants"
 	"user-service/constants/custom-error"
+	"user-service/services/user"
 
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -84,4 +87,59 @@ func validateAPIKey(c *gin.Context) error {
 	}
 
 	return nil
+}
+
+func validateBearerToken(c *gin.Context, token string) error {
+	if !strings.Contains(token, "Bearer") {
+		return customerror.ErrUnauthorized
+	}
+
+	tokenStr := extractBearerToken(token)
+	if tokenStr == "" {
+		return customerror.ErrUnauthorized
+	}
+
+	claims := &user.Claims{}
+	tokenJwt, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+		_, ok := t.Method.(*jwt.SigningMethodHMAC)
+		if !ok {
+			return nil, customerror.ErrInvalidToken
+		}
+
+		return []byte(config.Config.JwtSecretKey), nil
+	})
+	if err != nil || !tokenJwt.Valid {
+		return customerror.ErrUnauthorized
+	}
+
+	userLogin := c.Request.WithContext(context.WithValue(c.Request.Context(), constants.UserLogin, claims.User))
+	c.Request = userLogin
+	c.Set(constants.Token, token)
+
+	return nil
+}
+
+func Authenticate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var err error
+		token := c.GetHeader(constants.Authorization)
+		if token == "" {
+			responseUnauthorized(c, customerror.ErrUnauthorized.Error())
+			return
+		}
+
+		err = validateBearerToken(c, token)
+		if err != nil {
+			responseUnauthorized(c, err.Error())
+			return
+		}
+
+		err = validateAPIKey(c)
+		if err != nil {
+			responseUnauthorized(c, err.Error())
+			return
+		}
+
+		c.Next()
+	}
 }
