@@ -116,8 +116,9 @@ func (ur *UserRepository) Register(ctx context.Context, req *dto.RegisterRequest
 	return &user, err
 }
 
-func (ur *UserRepository) Update(ctx context.Context, req *dto.UpdateRequest, uuid string) (*models.User, error) {
+func (ur *UserRepository) Update(ctx context.Context, req *dto.UpdateRequest, userUuid string) (*models.User, error) {
 	user := models.User{
+		UUID:        uuid.MustParse(userUuid),
 		Name:        req.Name,
 		Username:    req.Username,
 		Email:       req.Email,
@@ -128,7 +129,7 @@ func (ur *UserRepository) Update(ctx context.Context, req *dto.UpdateRequest, uu
 
 	err := ur.db.
 		WithContext(ctx).
-		Where("uuid = ?", uuid).
+		Where("uuid = ?", userUuid).
 		Updates(&user).
 		Error
 	if err != nil {

@@ -83,6 +83,7 @@ func validateAPIKey(c *gin.Context) error {
 	resultHash := hex.EncodeToString(hash.Sum(nil))
 
 	if apiKey != resultHash {
+		logrus.Infof("ResultHash APIKey: %v", resultHash)
 		return customerror.ErrUnauthorized
 	}
 
@@ -91,11 +92,13 @@ func validateAPIKey(c *gin.Context) error {
 
 func validateBearerToken(c *gin.Context, token string) error {
 	if !strings.Contains(token, "Bearer") {
+		logrus.Errorf("Token is invalid")
 		return customerror.ErrUnauthorized
 	}
 
 	tokenStr := extractBearerToken(token)
 	if tokenStr == "" {
+		logrus.Errorf("Token is empty")
 		return customerror.ErrUnauthorized
 	}
 
@@ -103,12 +106,14 @@ func validateBearerToken(c *gin.Context, token string) error {
 	tokenJwt, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
+			logrus.Errorf("Token is invalid JWT")
 			return nil, customerror.ErrInvalidToken
 		}
 
 		return []byte(config.Config.JwtSecretKey), nil
 	})
 	if err != nil || !tokenJwt.Valid {
+		logrus.Errorf("Parsing token error: %v", err)
 		return customerror.ErrUnauthorized
 	}
 
@@ -124,18 +129,21 @@ func Authenticate() gin.HandlerFunc {
 		var err error
 		token := c.GetHeader(constants.Authorization)
 		if token == "" {
+			logrus.Errorf("Token is empty inside Authorization header")
 			responseUnauthorized(c, customerror.ErrUnauthorized.Error())
 			return
 		}
 
 		err = validateBearerToken(c, token)
 		if err != nil {
+			logrus.Errorf("Token is invalid bearer token: %v", err)
 			responseUnauthorized(c, err.Error())
 			return
 		}
 
 		err = validateAPIKey(c)
 		if err != nil {
+			logrus.Errorf("Validating API Key invalid: %v", err)
 			responseUnauthorized(c, err.Error())
 			return
 		}

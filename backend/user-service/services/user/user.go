@@ -11,6 +11,7 @@ import (
 	"user-service/repositories"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -76,7 +77,7 @@ func (us *UserService) GetUserLogin(ctx context.Context) (*dto.UserResponse, err
 }
 
 func (us *UserService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
-	user, err := us.repository.GetUser().FindByEmail(ctx, req.Username)
+	user, err := us.repository.GetUser().FindByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +187,8 @@ func (us *UserService) Update(ctx context.Context, req *dto.UpdateRequest, uuid 
 	}
 
 	if req.Password != nil {
-		if req.Password != req.ConfirmPassword {
+		if *req.Password != *req.ConfirmPassword {
+			logrus.Infof("Password and ConfirmPassword did not match: %s - %s", *req.Password, *req.ConfirmPassword)
 			return nil, errConstant.ErrPasswordDoesNotMatch
 		}
 
